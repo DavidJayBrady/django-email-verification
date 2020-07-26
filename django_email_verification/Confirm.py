@@ -18,22 +18,14 @@ from .errors import InvalidUserModel, EmailTemplateNotFound, NotAllFieldCompiled
 def sendConfirm(user, **kwargs):
     active_field = validateAndGetField('EMAIL_ACTIVE_FIELD')
     try:
-        setattr(user, active_field, False)
-        user.save()
-
-        try:
-            token = kwargs['token']
-        except KeyError:
-            token = default_token_generator.make_token(user)
-
+        token = default_token_generator.make_token(user)
         email = urlsafe_b64encode(str(user.email).encode('utf-8'))
-        t = Thread(target=sendConfirm_thread, args=(user.email, f'{email.decode("utf-8")}/{token}'))
-        t.start()
+        send_email(user.email, f'{email.decode("utf-8")}/{token}')
     except AttributeError:
         raise InvalidUserModel('The user model you provided is invalid')
 
 
-def sendConfirm_thread(email, token):
+def send_email(email, token):
     email_server = validateAndGetField('EMAIL_SERVER')
     sender = validateAndGetField('EMAIL_FROM_ADDRESS')
     domain = validateAndGetField('EMAIL_PAGE_DOMAIN')
